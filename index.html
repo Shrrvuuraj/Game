@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4-Player Paddle Game</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
+      background: #1a1a1a;
+      color: white;
+    }
+    canvas {
+      display: block;
+      background: #000;
+      margin: 0 auto;
+    }
+    .scoreboard {
+      position: absolute;
+      top: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 20px;
+      font-size: 20px;
+    }
+    .controls {
+      position: absolute;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 16px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+  <div class="scoreboard">
+    <div>Player 1: <span id="score1">0</span></div>
+    <div>Player 2: <span id="score2">0</span></div>
+    <div>Player 3: <span id="score3">0</span></div>
+    <div>Player 4: <span id="score4">0</span></div>
+  </div>
+  <canvas id="gameCanvas" width="800" height="600"></canvas>
+  <div class="controls">
+    <p>Use Arrow Keys (Player 1), WASD (Player 2), IJKL (Player 3), and TFGH (Player 4)</p>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // Game state
+    const paddles = [
+      { x: 0, y: 250, width: 10, height: 100, dy: 0, score: 0 }, // Left
+      { x: 790, y: 250, width: 10, height: 100, dy: 0, score: 0 }, // Right
+      { x: 350, y: 0, width: 100, height: 10, dx: 0, score: 0 }, // Top
+      { x: 350, y: 590, width: 100, height: 10, dx: 0, score: 0 } // Bottom
+    ];
+    const ball = { x: 400, y: 300, radius: 8, dx: 4, dy: 4 };
+
+    // Key states
+    const keys = {
+      ArrowUp: false,
+      ArrowDown: false,
+      KeyW: false,
+      KeyS: false,
+      KeyI: false,
+      KeyK: false,
+      KeyT: false,
+      KeyG: false
+    };
+
+    // Event listeners for key presses
+    document.addEventListener('keydown', (e) => {
+      if (keys.hasOwnProperty(e.code)) keys[e.code] = true;
+    });
+    document.addEventListener('keyup', (e) => {
+      if (keys.hasOwnProperty(e.code)) keys[e.code] = false;
+    });
+
+    // Update game state
+    function update() {
+      // Move paddles
+      if (keys.ArrowUp) paddles[0].dy = -5; // Player 1 (Left)
+      else if (keys.ArrowDown) paddles[0].dy = 5;
+      else paddles[0].dy = 0;
+
+      if (keys.KeyW) paddles[1].dy = -5; // Player 2 (Right)
+      else if (keys.KeyS) paddles[1].dy = 5;
+      else paddles[1].dy = 0;
+
+      if (keys.KeyI) paddles[2].dx = -5; // Player 3 (Top)
+      else if (keys.KeyK) paddles[2].dx = 5;
+      else paddles[2].dx = 0;
+
+      if (keys.KeyT) paddles[3].dx = -5; // Player 4 (Bottom)
+      else if (keys.KeyG) paddles[3].dx = 5;
+      else paddles[3].dx = 0;
+
+      // Update paddle positions
+      paddles[0].y += paddles[0].dy;
+      paddles[1].y += paddles[1].dy;
+      paddles[2].x += paddles[2].dx;
+      paddles[3].x += paddles[3].dx;
+
+      // Keep paddles in bounds
+      paddles.forEach(p => {
+        if (p.width === 10) p.y = Math.max(0, Math.min(canvas.height - p.height, p.y)); // Vertical paddles
+        else p.x = Math.max(0, Math.min(canvas.width - p.width, p.x)); // Horizontal paddles
+      });
+
+      // Move ball
+      ball.x += ball.dx;
+      ball.y += ball.dy;
+
+      // Ball collisions with walls
+      if (ball.y - ball.radius <= 0 || ball.y + ball.radius >= canvas.height) ball.dy *= -1;
+      if (ball.x - ball.radius <= 0 || ball.x + ball.radius >= canvas.width) ball.dx *= -1;
+
+      // Ball collisions with paddles
+      paddles.forEach((p, i) => {
+        if (
+          ball.x + ball.radius > p.x &&
+          ball.x - ball.radius < p.x + p.width &&
+          ball.y + ball.radius > p.y &&
+          ball.y - ball.radius < p.y + p.height
+        ) {
+          ball.dx *= -1.1;
+          ball.dy *= -1.1;
+          p.score++;
+          document.getElementById(`score${i + 1}`).textContent = p.score;
+        }
+      });
+    }
+
+    // Draw game
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw paddles
+      paddles.forEach(p => {
+        ctx.fillStyle = 'white';
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+      });
+
+      // Draw ball
+      ctx.beginPath();
+      ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+      ctx.fillStyle = 'red';
+      ctx.fill();
+    }
+
+    // Game loop
+    function gameLoop() {
+      update();
+      draw();
+      requestAnimationFrame(gameLoop);
+    }
+
+    gameLoop();
+  </script>
+</body>
+</html>
